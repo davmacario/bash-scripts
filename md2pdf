@@ -1,0 +1,52 @@
+#!/bin/bash
+
+DOCSTRING='Usage:\n\t md2pdf [-h|--help] input_file.md\n\nExport Markdown file as **beautiful** PDF. The pdf will have the same basename and will be placed in the same dir as the input file.'
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            echo -e "$DOCSTRING"
+            exit 1
+            ;;
+        *)
+            IN_F="$1"
+            shift
+            ;;
+    esac
+done
+
+if ! [ -x "$(command -v pandoc)" ]; then
+    echo "pandoc not found. Please install it with your package manager"
+fi
+
+if [ -z "$IN_F" ]; then
+    echo "Missing file"
+    echo "---"
+    echo -e "$DOCSTRING"
+    exit 2
+fi
+
+if [ "${IN_F##*.}" != "md" ]; then
+    echo "Input file must be Markdown!"
+    echo "---"
+    echo -e "$DOCSTRING"
+    exit 3
+fi
+
+base_name=$(basename "$IN_F")
+BNAME="${base_name%.*}"
+file_dir=$(dirname "$IN_F" | xargs realpath)
+
+echo "Exporting"
+pushd "$file_dir" > /dev/null
+pandoc \
+    -V geometry:margin=1in \
+    -V colorlinks=true \
+    -V linkcolor=blue \
+    -V urlcolor=blue \
+    --highlight-style=zenburn \
+    --to=pdf \
+    -o "./$BNAME.pdf" \
+    "./$base_name"
+popd > /dev/null
+echo "Done!"
